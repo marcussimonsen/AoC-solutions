@@ -1,6 +1,14 @@
 let ( >> ) f g = fun x -> g (f x)
 let ( << ) f g = fun x -> f (g x)
 
+type dir = Left | Right
+
+let char_to_dir c =
+  match c with
+  | 'L' -> Left
+  | 'R' -> Right
+  | _ -> raise (Failure "Should not happen")
+
 let rec read_program c =
   match In_channel.input_line c with
   | None -> []
@@ -9,12 +17,10 @@ let rec read_program c =
 let rec count_zeros cnt position instrs =
   match instrs with
   | [] -> cnt
-  | i :: instrs' -> (
-      let num = String.sub i 1 (String.length i - 1) |> Stdlib.int_of_string in
-      match i.[0] with
-      | 'L' -> update_count cnt ((position - num + 100) mod 100) instrs'
-      | 'R' -> update_count cnt ((position + num + 100) mod 100) instrs'
-      | _ -> raise (Failure "Shouldn't happen"))
+  | (Left, x) :: instrs' ->
+      update_count cnt ((position - x + 100) mod 100) instrs'
+  | (Right, x) :: instrs' ->
+      update_count cnt ((position + x + 100) mod 100) instrs'
 
 and update_count cnt position instrs =
   match position with
@@ -22,5 +28,9 @@ and update_count cnt position instrs =
   | _ -> count_zeros cnt position instrs
 ;;
 
-read_program stdin |> count_zeros 0 50 |> Int.to_string
+read_program stdin
+|> List.map (fun x ->
+    ( char_to_dir x.[0],
+      String.sub x 1 (String.length x - 1) |> Stdlib.int_of_string ))
+|> count_zeros 0 50 |> Int.to_string
 |> Out_channel.output_string stdout
